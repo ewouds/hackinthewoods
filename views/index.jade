@@ -1,0 +1,38 @@
+extends layout
+block content
+     h1 #{title}
+     br
+
+     form(action="/completetask", method="post")
+      table.table.table-striped.table-bordered
+         tr
+           td Name
+           td Date
+           td Complete
+         if (typeof tasks === "undefined")
+           tr
+             td
+         else
+           each task in tasks
+             tr
+               td #{task.name}
+               - var date  = new Date(task.date);
+               - var day   = date.getDate();
+               - var month = date.getMonth() + 1;
+               - var year  = date.getFullYear();
+               - var hour = date.getHours();
+               - var min = date.getMinutes();
+               - var sec = date.getSeconds()
+               td #{month + "/" + day + "/" + year +  " " + hour + ":" + min + ":" + sec}
+               td
+                if(task.completed) 
+                 input(type="checkbox", name="#{task.id}", value="#{!task.completed}", checked=task.completed)
+                else
+                 input(type="checkbox", name="#{task.id}", value="#{!task.completed}", checked=task.completed)
+       button.btn.btn-primary(type="submit") Update tasks
+     hr
+     form.well(action="/addtask", method="post")
+       label Task Name:
+       input(name="name", type="textbox")
+       button.btn.btn-primary(type="submit") Add task
+  
