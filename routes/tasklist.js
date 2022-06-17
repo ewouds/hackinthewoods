@@ -1,4 +1,5 @@
 var axios = require('axios');
+const config = require('../config')
 
 const TaskDao = require("../models/TaskDao");
 let totalTasks = 0;
@@ -24,9 +25,6 @@ let totalTasks = 0;
     
     const items = await this.taskDao.find(querySpec);
 
-    totalTasks = items.length
-    console.log("Items:" + totalTasks)
-
     res.render("index", {
        title: "My sustainable tasks",
        tasks: items
@@ -37,7 +35,7 @@ let totalTasks = 0;
    async addTask(req, res) {
      const item = req.body;
      await this.taskDao.addItem(item);
-     await this.checkBigList(totalTasks);
+     await this.checkBigList();
      res.redirect("/");
    }
 
@@ -54,14 +52,27 @@ let totalTasks = 0;
      res.redirect("/");
    }
 
-   async checkBigList(uncompletedItems){
-     if (uncompletedItems > 5) {
-        console.log("Too many Uncompleted tasks : " + uncompletedItems)
-        var dataToPost = {
-          uncompleted: uncompletedItems
+   async checkBigList(){
+
+    const query = {
+      query: "SELECT * FROM root r WHERE r.completed=@completed",
+      parameters: [
+        {
+          name: "@completed",
+          value: false
         }
-        let azureLAURL = "https://prod-27.centralus.logic.azure.com:443/workflows/1c0305dba69c42d5888f975b9af4dc2f/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=-Rzw-A4inbyoav9YnvBClABxT8JHFeSBIP8YKEqyjkY"
-        axios.post(azureLAURL, dataToPost )
+      ]
+    };
+
+    const items = await this.taskDao.find(query);
+
+     if (items.length >= 5) {
+        console.log("Too many Uncompleted tasks : " + items.length)
+        var dataToPost = {
+          uncompleted: items.length
+        }
+        console.log(config.logicappurl);
+        axios.post(config.logicappurl, dataToPost )
         .then((res) => {
             console.log(`Status: ${res.status}`);
         }).catch((err) => {
@@ -69,7 +80,7 @@ let totalTasks = 0;
         });
       }
       else{
-        console.log("item list is not long..." + uncompletedItems)
+        console.log("item list is not long..." + items.length)
       }
     
    }
